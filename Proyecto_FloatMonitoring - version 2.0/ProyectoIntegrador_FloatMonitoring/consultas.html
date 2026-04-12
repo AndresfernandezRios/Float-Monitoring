@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Float Monitoring | Consultas y Umbrales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        /* Toast */
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+        }
+
+        /* CORRECCIÓN 1: la columna lateral no se estira más allá de su contenido.
+           h-100 en Bootstrap fuerza el 100% del padre, que en una fila de altura
+           variable puede ser enorme. Con align-self-start la card solo ocupa
+           lo que necesita y no se expande hasta el final de la página. */
+        .col-sidebar {
+            align-self: start;
+            position: sticky;
+            /* se queda visible al hacer scroll en la tabla */
+            top: 1rem;
+        }
+
+        /* CORRECCIÓN 2: tabla con altura máxima y scroll interno */
+        .tabla-scroll {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        /* Cabecera fija dentro del scroll */
+        .tabla-scroll thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1"><i class="bi bi-clipboard-data"></i> Módulo de Consultas</span>
+            <!-- CORRECCIÓN: era /index (404), ahora apunta a / -->
+            <a href="/" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <!-- Toast de feedback -->
+    <div id="toast-container">
+        <div id="app-toast" class="toast align-items-center border-0" role="alert" aria-live="assertive"
+            aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-semibold" id="toast-mensaje"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4">
+        <div class="row g-4">
+
+            <!-- ── Barra lateral ── -->
+            <!-- col-sidebar: align-self-start evita que se estire hasta el fondo -->
+            <div class="col-lg-3 col-sidebar">
+                <div class="card shadow-sm border-primary">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0"><i class="bi bi-sliders"></i> Ajustar Umbrales</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Umbrales actuales:</p>
+                        <div id="lista-umbrales" class="mb-3 small">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div> Cargando...
+                        </div>
+
+                        <hr class="my-3">
+
+                        <p class="text-muted small mb-3">Define los nuevos límites:</p>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Variable</label>
+                            <select id="variable-umbral" class="form-select form-select-sm">
+                                <option value="ph">pH del Agua</option>
+                                <option value="temp_ambiente">Temp. Ambiente</option>
+                                <option value="temp_agua">Temp. Agua</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Límite Mínimo</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" step="0.1" id="val-min" class="form-control" placeholder="0.0">
+                                <span class="input-group-text">Min</span>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">Límite Máximo</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" step="0.1" id="val-max" class="form-control" placeholder="14.0">
+                                <span class="input-group-text">Max</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 shadow-sm" onclick="guardarUmbral()">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Panel principal ── -->
+            <div class="col-lg-9">
+
+                <!-- Filtro de fechas -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <h5 class="text-primary mb-3"><i class="bi bi-search"></i> Consultar Rango de Fechas</h5>
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-muted">Desde:</label>
+                                <input type="datetime-local" id="fecha-inicio" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-muted">Hasta:</label>
+                                <input type="datetime-local" id="fecha-fin" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button class="btn btn-primary btn-sm w-100" onclick="buscarHistorial()">Buscar</button>
+                                <button class="btn btn-outline-secondary btn-sm" title="Limpiar filtros"
+                                    onclick="limpiarFiltros()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="aviso-filtro" class="alert alert-info py-1 mt-2 small d-none">
+                            <i class="bi bi-funnel-fill"></i> Mostrando todos los registros del rango seleccionado.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfica histórica -->
+                <div class="card shadow-sm border-0 mb-4 p-3">
+                    <h5 class="text-muted small fw-bold text-uppercase">
+                        <i class="bi bi-activity"></i> Tendencia Histórica General
+                    </h5>
+                    <div style="height: 300px;">
+                        <canvas id="chartHistorico"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla con scroll -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                        <h5 class="mb-0 text-primary"><i class="bi bi-list-check"></i> Registro de Datos</h5>
+                        <div class="d-flex align-items-center gap-3">
+                            <span id="contador-registros" class="text-muted small"></span>
+                            <button onclick="buscarHistorial()" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CORRECCIÓN 2: div con max-height + overflow-y scroll,
+                         thead sticky para que el encabezado sea siempre visible -->
+                    <div class="tabla-scroll">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th class="text-primary">pH</th>
+                                    <th class="text-danger">T. Amb</th>
+                                    <th class="text-info">T. Agua</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpo-tabla">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando datos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /col-lg-9 -->
+        </div><!-- /row -->
+    </div><!-- /container -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/Js/consultas.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Float Monitoring | Dashboard en Vivo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .sensor-card {
+            transition: transform 0.2s, background-color 0.3s;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .sensor-card:hover {
+            transform: scale(1.02);
+        }
+
+        .value-display {
+            font-size: 3rem;
+            font-weight: 700;
+            /* Transición suave al cambiar de color en alertas */
+            transition: color 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-droplet-half"></i> Float Monitoring
+            </span>
+            <div>
+                <span class="badge bg-light text-primary me-3" id="connection-status">Conectando...</span>
+                <a href="/consultas" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-clock-history"></i> Historial y Umbrales
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Última actualización -->
+        <div class="text-center mb-3">
+            <p class="text-muted small fw-bold">
+                Última actualización:
+                <span id="fecha-actualizacion" class="text-dark">--</span>
+            </p>
+        </div>
+
+        <!-- Cajas de valores en tiempo real -->
+        <!-- IDs: caja-ph, caja-temp-amb, caja-temp-agua — deben coincidir con dashboard.js -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card sensor-card text-center h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted text-uppercase small">Nivel de pH</h5>
+                        <div id="caja-ph" class="value-display text-primary">--</div>
+                        <p class="card-text text-muted">Unidades de pH</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card sensor-card text-center h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted text-uppercase small">Temp. Ambiente</h5>
+                        <div id="caja-temp-amb" class="value-display text-danger">--</div>
+                        <p class="card-text text-muted">°Celsius</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card sensor-card text-center h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted text-uppercase small">Temp. Agua</h5>
+                        <div id="caja-temp-agua" class="value-display text-info">--</div>
+                        <p class="card-text text-muted">°Celsius</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="row mb-5 g-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm p-3 border-0">
+                    <h5 class="text-muted small fw-bold text-uppercase">
+                        <i class="bi bi-graph-up"></i> Tendencia de pH (Últimas lecturas)
+                    </h5>
+                    <div style="height: 250px;"><canvas id="chartPh"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm p-3 border-0">
+                    <h5 class="text-muted small fw-bold text-uppercase">
+                        <i class="bi bi-thermometer-half"></i> Temperatura Agua (Últimas lecturas)
+                    </h5>
+                    <div style="height: 250px;"><canvas id="chartTempAgua"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="card shadow-sm p-3 border-0">
+                    <h5 class="text-muted small fw-bold text-uppercase">
+                        <i class="bi bi-sun"></i> Temperatura Ambiente (Últimas lecturas)
+                    </h5>
+                    <div style="height: 250px;"><canvas id="chartTempAmb"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- dashboard.js carga DESPUÉS de Bootstrap para que los elementos del DOM ya existan -->
+    <script src="/static/Js/dashboard.js"></script>
+</body>
+
+</html>
