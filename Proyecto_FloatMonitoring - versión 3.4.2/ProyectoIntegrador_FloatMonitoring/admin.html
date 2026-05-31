@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Float Monitoring | Administración</title>
+    <link rel="icon" href="data:,">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; }
+
+        .rol-badge-admin      { background-color: #6f42c1; }
+        .rol-badge-docente    { background-color: #0d6efd; }
+        .rol-badge-estudiante { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-shield-lock"></i> Panel de Administración
+            </span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white-50 small">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <span id="usuario-nombre">--</span>
+                    <span class="badge bg-white text-primary ms-1" id="usuario-rol"></span>
+                </span>
+                <a href="/" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> Dashboard
+                </a>
+                <button class="btn btn-sm btn-outline-light" onclick="cerrarSesion()">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Toast -->
+    <div id="toast-container">
+        <div id="app-toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-semibold" id="toast-mensaje"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cambiar contraseña -->
+    <div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-key"></i> Cambiar Contraseña</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Usuario: <strong id="modal-username"></strong>
+                    </p>
+                    <input type="hidden" id="modal-user-id">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nueva contraseña</label>
+                        <input type="password" id="nueva-password" class="form-control form-control-sm"
+                            placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold">Confirmar contraseña</label>
+                        <input type="password" id="confirmar-password" class="form-control form-control-sm"
+                            placeholder="Repite la contraseña">
+                    </div>
+                    <div id="error-password" class="text-danger small mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="guardarPassword()">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Crear usuario -->
+    <div class="modal fade" id="modalCrear" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-person-plus"></i> Nuevo Usuario</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Usuario</label>
+                        <input type="text" id="nuevo-username" class="form-control form-control-sm"
+                            placeholder="Nombre de usuario">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Contraseña</label>
+                        <input type="password" id="nuevo-password" class="form-control form-control-sm"
+                            placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold">Rol</label>
+                        <select id="nuevo-rol" class="form-select form-select-sm">
+                            <option value="estudiante">Estudiante</option>
+                            <option value="docente">Docente</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div id="error-crear" class="text-danger small mt-2 d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="crearUsuario()">
+                        <i class="bi bi-person-plus"></i> Crear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 text-primary">
+                    <i class="bi bi-people"></i> Gestión de Usuarios
+                </h5>
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                    <i class="bi bi-person-plus"></i> Nuevo Usuario
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo-tabla-usuarios">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/Js/admin.js"></script>
+</body>
+</html>
